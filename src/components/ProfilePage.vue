@@ -81,7 +81,11 @@ const navigateToEditor = () => {
 
 // Load profile when component mounts
 onMounted(() => {
-  profileStore.loadProfile();
+  try {
+    profileStore.loadProfile();
+  } catch (error) {
+    console.error('Error loading profile:', error);
+  }
 });
 
 // Toggle between light and dark theme

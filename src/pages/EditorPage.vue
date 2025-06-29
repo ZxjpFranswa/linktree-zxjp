@@ -198,14 +198,24 @@ const toggleTheme = () => {
   theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark';
 };
 
-// Use the profile from the store
-const formData = ref({});
+// Form data and state
+const formData = ref({
+  username: '',
+  bio: '',
+  avatar: '',
+  socialLinks: [
+    { platform: 'Facebook', icon: 'mdi-facebook', url: '' },
+    { platform: 'Instagram', icon: 'mdi-instagram', url: '' },
+    { platform: 'Twitter', icon: 'mdi-twitter', url: '' },
+    { platform: 'YouTube', icon: 'mdi-youtube', url: '' },
+  ]
+});
 const isLoading = ref(false);
 const errorMessage = ref('');
 
 // Initialize form data with store data when component mounts
 onMounted(() => {
-  formData.value = { ...profileStore.profile.value };
+  loadProfile();
 });
 
 // Handle file upload
@@ -303,29 +313,42 @@ const saveProfile = async () => {
 
 // Reset profile to default values
 const resetProfile = () => {
-  formData.value = {...defaultProfile};
-  localStorage.removeItem('facebookProfile');
+  formData.value = {
+    username: '',
+    bio: '',
+    avatar: '',
+    socialLinks: [
+      { platform: 'Facebook', icon: 'mdi-facebook', url: '' },
+      { platform: 'Instagram', icon: 'mdi-instagram', url: '' },
+      { platform: 'Twitter', icon: 'mdi-twitter', url: '' },
+      { platform: 'YouTube', icon: 'mdi-youtube', url: '' },
+    ]
+  };
+  localStorage.removeItem('userProfile');
+  profileStore.resetProfile();
 };
 
 // Load user profile
 const loadProfile = async () => {
   try {
     isLoading.value = true;
-    // Check if we have a user ID in localStorage
+    errorMessage.value = '';
+    
+    // Load profile from the store
+    profileStore.loadProfile();
+    
+    // If we have a profile in the store, use it
+    if (profileStore.profile.value) {
+      formData.value = { ...formData.value, ...profileStore.profile.value };
+    }
+    
+    // Also check localStorage as a fallback
     const savedProfile = localStorage.getItem('userProfile');
     if (savedProfile) {
       const profile = JSON.parse(savedProfile);
-      formData.value = { ...defaultProfile, ...profile };
-      
-      // If we have a user ID, try to fetch the latest data
-      if (profile.user_id) {
-        // Note: You might want to implement a get user endpoint
-        // const response = await axios.get(`${API_BASE_URL}/get_user.php?id=${profile.user_id}`);
-        // formData.value = { ...formData.value, ...response.data };
-      }
-    } else {
-      resetProfile();
+      formData.value = { ...formData.value, ...profile };
     }
+    
   } catch (error) {
     console.error('Error loading profile:', error);
     errorMessage.value = 'Failed to load profile';
@@ -333,11 +356,6 @@ const loadProfile = async () => {
     isLoading.value = false;
   }
 };
-
-// Load profile when component mounts
-onMounted(() => {
-  loadProfile();
-});
 </script>
 
 
